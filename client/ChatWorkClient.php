@@ -51,17 +51,11 @@ class ChatWorkClient {
             throw new Exception('null roomId');
         }
         
-        $option = array(
-            CURLOPT_URL => self::API_URL.self::ROOMS.$this->roomId.self::MESSAGES,
-            CURLOPT_HTTPHEADER => array("X-ChatWorkToken: {$this->chatWorkToken}"),
-            CURLOPT_POST => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_POSTFIELDS => http_build_query(array('body' => $message), '', '&'),
-        );
+        $url = self::API_URL.self::ROOMS.$this->roomId.self::MESSAGES;
+        $header = array("X-ChatWorkToken: {$this->chatWorkToken}");
+        $parameters = http_build_query(array('body' => $message), '', '&');
         
-        $this->curlClient->setOption($option);
-        $response = $this->curlClient->post();
+        $response = $this->curlClient->httpPost($url, $parameters, $header);
         
         return $response;
     }

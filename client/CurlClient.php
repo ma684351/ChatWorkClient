@@ -5,15 +5,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 namespace client;
 
 class CurlClient {
-
-    /**
-     * Curlのインスタンス
-     * @var Curl
-     */
-    protected $curl = null;
 
     /**
      * curlのオプションを格納した配列
@@ -22,42 +17,49 @@ class CurlClient {
     protected $option = array();
 
     /**
-     * http ステータスコード
-     * @var int
+     * レスポンスのステータス情報
+     * @var array
      */
-    protected $httpStatusCode = 0;
+    protected $curlResponseInfo = array();
 
-    function __construct() {
-        //初期化しておく
-        $this->curl = curl_init();
-    }
-
-    function post() {
-        //無ければ例外を吐く
-        if (!isset($this->option)) {
-            throw new Exception('null options');
-        }
-        //curlの設定をセットする
-        curl_setopt_array($this->curl, $this->option);
-        $response = curl_exec($this->curl);
-        //httpステータス
-        $this->httpStatusCode = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+    function httpPost($url, $parameters, $header = false) {
+        $ch = $this->commonCurlParamerters($url);
         
+        if ($header !== false){
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        }
+        
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $parameters);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+
+        $response = $this->execute($ch);
         return $response;
     }
 
-    
-    
-    function getOption() {
-        return $this->option;
+    private function commonCurlParamerters($url) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_PORT, 443);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        return $ch;
     }
-    
-    function getHttpStatusCode() {
-        return $this->httpStatusCode;
-    }
-    
-    function setOption($option) {
-        $this->option = $option;
+
+    private function execute($ch) {
+        $response = '';
+        $response = curl_exec($ch);
+        if ($response === false) {
+            $errorMessage = "Unable to post request, underlying exception of " . curl_error($ch);
+            curl_close($ch);
+            throw new \Exception($errorMessage);
+        } else {
+            $this->curlResponseInfo = curl_getinfo($ch);
+        }
+        curl_close($ch);
+        return $response;
     }
 
 }
